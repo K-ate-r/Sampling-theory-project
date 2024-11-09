@@ -1,0 +1,55 @@
+#packages needed 
+library(survey)
+
+## importing data 
+main <- read.csv("MT4608M.csv")
+View(main)
+## specify design 
+maindesign <- svydesign(id = ~1, strata = ~stratum, data = main, fpc = rep(48, 20))
+maindesign
+
+# Calculate the mean for each stratum
+stratum_means <- svyby(~number.of.vehicles, ~stratum, maindesign, svymean)
+print("Mean number of vehicles by stratum:")
+print(stratum_means)
+
+# Calculate the variance for each stratum
+stratum_var <- svyby(~number.of.vehicles, ~stratum, maindesign, svyvar)
+print("Variance number of vehicles by stratum:")
+print(stratum_var)
+
+# to get variance, square the SE 
+
+## Estimate overall mean
+mean_hat <- svymean(~number.of.vehicles, design = maindesign)
+mean_hat
+
+# From here can see that se = 3.385 which means
+# Estimate of variance = 3.385^2
+#                      = 11.45822 
+# Estimate overall variance
+meancars <- mean_hat[1]
+secars <- SE(svymean(~number.of.vehicles, design = maindesign))mean_hat[0]
+varcars <- secars^2
+
+
+## confidence interval for mean 
+
+# using normal approx 
+confint(svymean(~number.of.vehicles, design = maindesign))
+# (115.0935, 130.0065)
+
+df <- 18                             
+alpha <- 0.05                                             
+
+# t-critical value for 95% CI
+t_critical <- qt(1 - alpha/2, df)
+
+# Margin of error
+margin_of_error <- t_critical * (sqrt(varcars))
+
+# Confidence interval
+lower_bound <- meancars - margin_of_error
+upper_bound <- meancars + margin_of_error
+
+cat("95% Confidence interval for afternoon using t-distribution:", lower_bound, "to", upper_bound, "\n")
